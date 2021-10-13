@@ -17,13 +17,13 @@ Candidate: Ho Tsz Chun (Stern)
 
 *Functional*
 * Add: create order (and random prepare time between 5-15 mins) by using table id & item id\
-http://127.0.0.1:3000/create_order/table_id/item_id
-* Delete: remove order by using order id or (table id & item id) ??\
-http://127.0.0.1:3000/remove_order/table_id/item_id
+  http://127.0.0.1:3000/create?table_id=1&item_id=abc
+* Delete: remove order by using order id or (table id & item id)\
+  http://127.0.0.1:3000/delete?table_id=1&order_id=1634097976883281
 * Select: get all (remaining) items by table id\
-http://127.0.0.1:3000/enquiry/table_id
-* Select: get item by order id or (table id & item id) ??\
-http://127.0.0.1:3000/enquiry/table_id/item_id
+  http://127.0.0.1:3000/check/?table_id=1
+* Select: get item by order id or (table id & item id)\
+  http://127.0.0.1:3000/check/?table_id=1&item_id=5
 
 *Technical*
 * limit number of orders for 1 table
