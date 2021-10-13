@@ -19,8 +19,7 @@ pub(crate) struct Order {
 impl Order {
     pub fn new(item_id:String) -> Order {
         let order_id = Uuid::new_v4().to_string();
-        // let cook_time:i32 = rand::thread_rng().gen_range(5..15);
-        let cook_time:i32 = 1;
+        let cook_time:i32 = rand::thread_rng().gen_range(5..15);
         Order {
             order_id,
             item_id,
