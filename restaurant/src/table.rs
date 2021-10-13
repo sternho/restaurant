@@ -1,42 +1,51 @@
-use std::borrow::Borrow;
-use std::sync::{Arc, Mutex, MutexGuard};
-use std::thread;
-use std::collections::HashMap;
-use std::iter::Copied;
-use std::slice::Iter;
-use std::time::SystemTime;
+// use std::borrow::Borrow;
+// use std::collections::HashMap;
+// use std::iter::Copied;
+// use std::slice::Iter;
+// use std::sync::{Arc, Mutex, MutexGuard};
+// use std::thread;
+// use std::time::SystemTime;
+use std::sync::Mutex;
 
 use crate::order::Order;
 
+static MAX_ORDER_NUMBER: usize = 100;
+
 pub(crate) struct Table {
+    pub(crate) table_id: usize,
     pub(crate) orders: Vec<Order>,
 }
 impl Clone for Table {
     fn clone(&self) -> Table {
-        let mut new = Table::new();
+        let mut new = Table::new(self.table_id);
         new.orders = self.orders.clone();
         return new;
     }
 }
 
 impl Table {
-    pub fn new() -> Table {
+    pub fn new(table_id: usize) -> Table {
         return Table {
+            table_id,
             orders: Vec::new(),
         };
     }
 
     pub fn open_tables(number_of_tables:usize) -> Vec<Mutex<Table>> {
         let mut tables = Vec::new();
-        for n in 0 .. number_of_tables {
-            tables.push(Mutex::new(Table::new()));
+        for table_id in 0 .. number_of_tables {
+            tables.push(Mutex::new(Table::new(table_id)));
         }
         return tables;
     }
 
+    pub fn is_too_much_order(table:Table) -> bool {
+        table.orders.len() > MAX_ORDER_NUMBER
+    }
+
     pub fn create_order(table:Table, item_id:String) -> Vec<Order> {
         let mut orders = table.orders.clone();
-        orders.push(Order::new(item_id));
+        orders.push(Order::new(table.table_id, item_id));
         return orders;
     }
 
@@ -45,7 +54,6 @@ impl Table {
         let orders = orders.into_iter()
             .filter(|order| !order.order_id.eq(order_id.as_str()))
             .collect::<Vec<Order>>();
-        println!("order size:{}",orders.len());
         return orders;
     }
 
@@ -60,7 +68,8 @@ impl Table {
     pub fn get_orders_by_item(table:Table, item_id:String) -> Vec<Order> {
         let orders = table.orders.clone();
         let orders = orders.into_iter()
-            .filter(|order| !order.item_id.eq(item_id.as_str()))
+            .filter(|order| Order::is_order_expired(order.clone()))
+            .filter(|order| order.item_id.eq(item_id.as_str()))
             .collect::<Vec<Order>>();
         return orders;
     }
