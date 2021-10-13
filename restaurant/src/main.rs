@@ -26,11 +26,9 @@ static THREAD_POOL: usize = 10;
 fn main() {
     let listener = TcpListener::bind(ADDRESS).unwrap();
     let thread_pool = ThreadPool::new(THREAD_POOL);
-    // let restaurant = Arc::new(Restaurant::new(10));
     let tables = Arc::new(Table::open_tables(10));
 
     for stream in listener.incoming() {
-        // let restaurant = restaurant.clone();
         let tables = tables.clone();
 
         let stream = stream.unwrap();
@@ -56,67 +54,61 @@ fn handle_connection(mut stream:TcpStream, mut tables:Arc<Vec<Mutex<Table>>>) {
     let mut html:String;
     // if compare(link,"/") {
     //     file_name = "resource/index.html";
-    // } else if compare(link, "/sleep") {
-    //     thread::sleep(Duration::from_secs(10));
-    //     file_name = "resource/sleep.html"
     // } else
     if compare(api, "/create") {
-        let table_id = request.get("table_id").unwrap().parse::<usize>().unwrap();
-        let item_id = request.get("item_id").unwrap().to_string();
+        let table_id = request.get("table_id");
+        let item_id = request.get("item_id");
 
-        let mut table = tables[table_id].lock().unwrap();
-        let orders = Table::create_order(table.clone(), item_id);
-        table.orders = orders;
-        html = String::from("order created sucessfully");
+        if table_id.is_some() && item_id.is_some() {
+            let table_id = table_id.unwrap().parse::<usize>().unwrap();
+            let mut table = tables[table_id].lock().unwrap();
+            let orders = Table::create_order(table.clone(), item_id.unwrap().to_string());
+            table.orders = orders;
+            html = format!("order created successfully.");
+        } else {
+            html = format!("Please enter table_id and item_id.");
+        }
     } else if compare(api, "/delete") {
-        let table_id = request.get("table_id").unwrap().parse::<usize>().unwrap();
-        let order_id = request.get("order_id").unwrap().to_string();
+        let table_id = request.get("table_id");
+        let order_id = request.get("order_id");
 
-        let mut table = tables[table_id].lock().unwrap();
-        let orders = Table::delete_order(table.clone(), order_id);
-        table.orders = orders;
-        html = String::from("order delete sucessfully");
+        if table_id.is_some() && order_id.is_some() {
+            let order_id = order_id.unwrap().to_string();
+            let table_id = table_id.unwrap().parse::<usize>().unwrap();
+            let mut table = tables[table_id].lock().unwrap();
+            // let orders = Table::delete_order(table.clone(), order_id);
+            // table.orders = orders;
+            let order = Table::get_orders_by_order_id(table.clone(), order_id.clone());
+            if order.is_some() {
+                let orders = Table::delete_order(table.clone(), order_id.clone());
+                table.orders = orders;
+                html = format!("order delete successfully");
+            } else {
+                html = format!("Delete failure: order [{}] not found.", order_id);
+            }
+        } else {
+            html = format!("Please enter table_id and order_id.");
+        }
     } else if compare(api, "/check") {
         let table_id = request.get("table_id").unwrap().parse::<usize>().unwrap();
-        let item_id = request.get("item_id").unwrap().to_string();
+        let order_id = request.get("order_id");
 
         let mut table = tables[table_id].lock().unwrap();
-        html = Table::to_json(table.clone()).to_string();
+        if order_id.is_some() {
+            let order = Table::get_orders_by_order_id(table.clone(), order_id.unwrap().to_string());
+            match order {
+                Some(o) => {html = Order::to_json(o)}
+                None => {html = format!("Order [{}] not found.", order_id.unwrap())}
+            }
+        } else {
+            let orders = Table::get_orders_active(table.clone());
+            html = Order::to_jsons(orders);
+        }
     } else {
         status = 404;
         status_text = "not found";
         html = fs::read_to_string("resource/404.html").unwrap();
     }
-
-    // if buffer.starts_with(path("/").as_bytes()) {
-    //     file_name = "resource/index.html";
-    // } else if buffer.starts_with(path("/sleep").as_bytes()) {
-    //     thread::sleep(Duration::from_secs(10));
-    //     file_name = "resource/sleep.html"
-    // } else if buffer.starts_with(path("/create").as_bytes()) {
-    //     let table_id:u32 = 0;
-    //     let item_id = String::from("item1");
-    //
-    //     let mut table = tables[0].lock().unwrap();
-    //     let orders = Table::create_order(table.clone(), item_id);
-    //     table.orders = orders;
-    //     println!("order created sucessfully");
-    //
-    //     file_name = "resource/index.html";
-    // } else if buffer.starts_with(path("/check").as_bytes()) {
-    //     // Restaurant::print(restaurant);
-    //     let mut tmp = Vec::new();
-    //     for n in 0 .. tables.len() {
-    //         tmp.push(tables[n].lock().unwrap().clone());
-    //     }
-    //     Table::print(tmp);
-    //
-    //     file_name = "resource/index.html";
-    // } else {
-    //     status = 404;
-    //     status_text = "not found";
-    //     file_name = "resource/404.html";
-    // }
 
     let response = format!("HTTP/1.1 {} {}\r\n\r\n{}", status, status_text, html);
     stream.write(response.as_bytes()).unwrap();

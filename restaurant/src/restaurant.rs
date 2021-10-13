@@ -49,11 +49,28 @@ impl Table {
         return orders;
     }
 
-    pub fn get_orders(table:Table, item_id:String) -> Vec<Order> {
+    pub fn get_orders_active(table:Table) -> Vec<Order> {
+        let orders = table.orders.clone();
+        let orders = orders.into_iter()
+            .filter(|order| Order::is_order_expired(order.clone()))
+            .collect::<Vec<Order>>();
+        return orders;
+    }
+
+    pub fn get_orders_by_item(table:Table, item_id:String) -> Vec<Order> {
         let orders = table.orders.clone();
         let orders = orders.into_iter()
             .filter(|order| !order.item_id.eq(item_id.as_str()))
             .collect::<Vec<Order>>();
+        return orders;
+    }
+
+    pub fn get_orders_by_order_id(table:Table, order_id:String) -> Option<Order> {
+        let orders = table.orders.clone();
+        let orders = orders.into_iter()
+            .filter(|order| order.order_id.eq(order_id.as_str()))
+            .next();
+            // .collect::<Vec<Order>>();
         return orders;
     }
 
@@ -69,13 +86,14 @@ impl Table {
         let mut json:String = "".to_string();
         for n in 0..table.orders.len() {
             let order = table.orders.get(n).unwrap();
-            json.push_str(&*Order::get_json(order.clone()));
+            json.push_str(&*Order::to_json(order.clone()));
             // json = &*(json.to_owned() + Order::get_json(order.clone()));
         }
         return json;
     }
-
 }
+
+
 
 // pub(crate) struct Restaurant {
 //     // change to vec<vec<Order>,
