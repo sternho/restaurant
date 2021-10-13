@@ -13,11 +13,11 @@ use std::thread;
 use std::time::Duration;
 use crate::order::Order;
 
-use crate::restaurant::{Table};
+use crate::table::{Table};
 use crate::thread_pool::ThreadPool;
 
 #[path = "http_server.rs"] mod thread_pool;
-#[path = "restaurant.rs"] mod restaurant;
+#[path = "table.rs"] mod table;
 #[path = "order.rs"] mod order;
 
 static ADDRESS: &str = "127.0.0.1:3000";
