@@ -8,33 +8,20 @@ use chrono::{DateTime, Local, NaiveDateTime, TimeZone, Utc};
 use redis::{Commands, RedisResult};
 use self::redis::Connection;
 
-fn get_connection() -> Connection {
-    let client = redis::Client::open("redis://127.0.0.1/");
-    let con = client.unwrap().get_connection().unwrap();
-    return con;
-}
-
-// pub fn put_number(table_id:i32) {
-//     let client = redis::Client::open("redis://127.0.0.1/").unwrap();
-//     let mut con = client.get_connection().unwrap();
-//     let _ : () = con.set(table_id, 42).unwrap();
-// }
+static REDIS_ADDRESS: &str = "redis://127.0.0.1/";
+static REDIS_DATETIME_FORMAT:&str = "%Y/%m/%d %H:%M:%S";
 
 pub fn put_table(table:Table) {
     let serialized = serialize_table(table.clone());
 
-    let client = redis::Client::open("redis://127.0.0.1/");
+    let client = redis::Client::open(REDIS_ADDRESS);
     let mut con = client.unwrap().get_connection().unwrap();
     let _ : () = con.set(table.table_id, serialized).unwrap();
 }
 
 pub fn fetch_table(table_id:String) -> Table {
-    // let mut con = get_connection();
-    // con.get(table_id)
-    let client = redis::Client::open("redis://127.0.0.1/").unwrap();
-    let mut con = client.get_connection().unwrap();
-    // let result = con.get(table_id).unwrap();
-    // let result = deserialize_table(result);
+    let client = redis::Client::open(REDIS_ADDRESS);
+    let mut con = client.unwrap().get_connection().unwrap();
 
     let result = con.get(table_id.clone());
     let mut table:Table;
@@ -44,13 +31,6 @@ pub fn fetch_table(table_id:String) -> Table {
         table = Table::new(table_id);
     }
 
-    // let result = con.get(table_id, (e, data) => {
-    //     if e {
-    //         deserialize_table(result);
-    //     } else {
-    //         Table::new(table_id.clone());
-    //     }
-    // });
     return table;
 }
 
@@ -66,7 +46,7 @@ fn serialize_table(table:Table) -> String{
         result.push_str("|");
         result.push_str(&*order.cook_time.to_string());
         result.push_str("|");
-        result.push_str(&*order.create_at.format("%Y/%m/%d %H:%M:%S").to_string());
+        result.push_str(&*order.create_at.format(REDIS_DATETIME_FORMAT).to_string());
         result.push_str(",");
     }
     result
@@ -83,7 +63,7 @@ fn deserialize_table(string:String) -> Table{
         let item_id = items.next().unwrap().to_string();
         let cook_time = items.next().unwrap().parse::<usize>().unwrap();
         let tmp = items.next().unwrap().to_string();
-        let tmp = NaiveDateTime::parse_from_str(&*tmp, "%Y/%m/%d %H:%M:%S").unwrap();
+        let tmp = NaiveDateTime::parse_from_str(&*tmp, REDIS_DATETIME_FORMAT).unwrap();
         let tmp = Local.from_local_datetime(&tmp).unwrap();
         let create_at = tmp;
         let order = Order {

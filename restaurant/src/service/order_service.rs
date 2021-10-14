@@ -1,6 +1,5 @@
-use std::sync::Mutex;
-use chrono::{Local, DateTime};
-use self::chrono::Duration;
+use chrono::Local;
+use self::chrono::{DateTime, Duration};
 
 extern crate chrono;
 use crate::order::Order;
@@ -14,10 +13,11 @@ pub struct OrderService {
 
 impl OrderService {
 
-    pub fn is_order_expired(order:Order) -> bool {
+    pub fn is_order_expired(order:Order, expire_time:DateTime<Local>) -> bool {
         let expired_time = order.create_at + Duration::minutes(order.cook_time as i64);
-        return expired_time > Local::now();
+        return expired_time > expire_time;
     }
+
     pub fn is_too_much_order(table:Table, new_item_cnt:usize) -> bool {
         table.orders.len()+new_item_cnt > MAX_ORDER_NUMBER
     }
@@ -38,18 +38,18 @@ impl OrderService {
         return orders;
     }
 
-    pub fn get_orders_active(table:Table) -> Vec<Order> {
+    pub fn get_orders_active(table:Table, expire_time:DateTime<Local>) -> Vec<Order> {
         let orders = table.orders.clone();
         let orders = orders.into_iter()
-            .filter(|order| OrderService::is_order_expired(order.clone()))
+            .filter(|order| OrderService::is_order_expired(order.clone(), expire_time))
             .collect::<Vec<Order>>();
         return orders;
     }
 
-    pub fn get_orders_by_item(table:Table, item_id:String) -> Vec<Order> {
+    pub fn get_orders_by_item(table:Table, item_id:String, expire_time:DateTime<Local>) -> Vec<Order> {
         let orders = table.orders.clone();
         let orders = orders.into_iter()
-            .filter(|order| OrderService::is_order_expired(order.clone()))
+            .filter(|order| OrderService::is_order_expired(order.clone(), expire_time))
             .filter(|order| order.item_id.eq(item_id.as_str()))
             .collect::<Vec<Order>>();
         return orders;

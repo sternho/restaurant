@@ -1,14 +1,8 @@
-// use std::{fs, mem};
 use std::fs;
-// use std::cell::RefCell;
-// use std::collections::HashMap;
 use std::io::prelude::*;
 use std::net::TcpListener;
 use std::net::TcpStream;
-// use std::str::{Lines};
-use std::sync::{Arc, Mutex, MutexGuard};
-// use std::thread;
-// use std::time::Duration;
+use chrono::Local;
 
 use crate::action::Action;
 use crate::order::Order;
@@ -17,11 +11,14 @@ use crate::table::Table;
 use crate::thread_pool::ThreadPool;
 
 #[path = "util/http_server.rs"] mod thread_pool;
+#[path = "util/datetime_util.rs"] mod datetime_util;
 #[path = "dao/table.rs"] mod table;
 #[path = "dao/order.rs"] mod order;
 #[path = "repository/redis_handler.rs"] mod redis_handler;
 #[path = "service/order_service.rs"] mod order_service;
 #[path = "action.rs"] mod action;
+#[path = "test/test_order_service.rs"] mod test_order_service;
+#[path = "test/test_datetime_util.rs"] mod test_datetime_util;
 
 static ADDRESS: &str = "127.0.0.1:3000";
 static THREAD_POOL: usize = 10;
@@ -114,9 +111,11 @@ fn create_action(mut table:Table, item_id:String) -> String {
 fn query_action(table:Table, item_id:Option<&String>) -> String {
     let orders;
     if item_id.is_some() {
-        orders = OrderService::get_orders_by_item(table.clone(), item_id.unwrap().to_string());
+        orders = OrderService::get_orders_by_item(table.clone(),
+                                                  item_id.unwrap().to_string(),
+                                                  Local::now());
     } else {
-        orders = OrderService::get_orders_active(table.clone());
+        orders = OrderService::get_orders_active(table.clone(), Local::now());
     }
     let html = OrderService::to_jsons(orders);
     html
