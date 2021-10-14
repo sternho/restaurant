@@ -35,12 +35,6 @@ impl Order {
         return expired_time > Local::now();
     }
 
-    pub fn print(order:Order) {
-        println!("[order] item:{}, cook_time:{}",
-                 order.item_id, order.cook_time,
-        );
-    }
-
     pub fn to_json(order:Order) -> String {
         let mut json = String::from("{\n");
         json.push_str(&*format!("\t\"order_id\":\"{}\",\n", order.order_id));

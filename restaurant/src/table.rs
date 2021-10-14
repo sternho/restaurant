@@ -83,21 +83,4 @@ impl Table {
         return orders;
     }
 
-    pub fn print(tables:Vec<Table>) {
-        println!("**** Restaurant status ****");
-        println!("Total Orders: {}", tables.len());
-        for n in 0..tables.len() {
-            println!("table: {} size: {}", n, tables[n].orders.len());
-        }
-    }
-
-    pub fn to_json(table:Table) -> String {
-        let mut json:String = "".to_string();
-        for n in 0..table.orders.len() {
-            let order = table.orders.get(n).unwrap();
-            json.push_str(&*Order::to_json(order.clone()));
-            // json = &*(json.to_owned() + Order::get_json(order.clone()));
-        }
-        return json;
-    }
 }

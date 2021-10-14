@@ -39,8 +39,8 @@ fn main() {
 }
 
 fn handle_connection(mut stream:TcpStream, tables:Arc<Vec<Mutex<Table>>>) {
-    let mut status = 200;
-    let mut status_text = "ok";
+    let status = 200;
+    let status_text = "ok";
     let mut buffer = [0; 1024];
 
     stream.read(&mut buffer).unwrap();
@@ -49,11 +49,10 @@ fn handle_connection(mut stream:TcpStream, tables:Arc<Vec<Mutex<Table>>>) {
     let api = request.get("api").unwrap();
     println!("Called API: {}", api);
 
-    let mut html:String;
-
+    let html:String;
     let (action, check) = Action::action_parse(request.clone());
     if Action::None == action {
-        html = fs::read_to_string("resource/index.html").unwrap();
+        html = fs::read_to_string("resource/html/index.html").unwrap();
     } else if check {
         let table_id = request.get("table_id").unwrap();
         let table_id = table_id.parse::<usize>().unwrap();
@@ -61,7 +60,7 @@ fn handle_connection(mut stream:TcpStream, tables:Arc<Vec<Mutex<Table>>>) {
             let item_id = request.get("item_id");
             let order_id = request.get("order_id");
 
-            let mut table = tables[table_id].lock().unwrap();
+            let table = tables[table_id].lock().unwrap();
             match action {
                 Action::Create => {
                     let item_id = item_id.unwrap().to_string();
@@ -75,7 +74,7 @@ fn handle_connection(mut stream:TcpStream, tables:Arc<Vec<Mutex<Table>>>) {
                     html = query_action(table, item_id);
                 },
                 _ => {
-                    html = fs::read_to_string("resource/index.html").unwrap();
+                    html = fs::read_to_string("../resource/html/index.html").unwrap();
                 }
             }
         } else {
