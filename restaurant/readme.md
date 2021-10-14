@@ -16,27 +16,32 @@ Candidate: Ho Tsz Chun (Stern)
 ## Functions
 
 *Functional*
-* Add: create order (and random prepare time between 5-15 mins) by using table id & item id\
-  http://127.0.0.1:3000/create?table_id={}&item_id={}
+* Add: create order (and random prepare time between 5-15 minutes) by using table id & item id\
+  [GET] http://127.0.0.1:3000/create?table_id={}&item_id={},{},{}
 * Delete: remove order by using order id or (table id & item id)\
-  http://127.0.0.1:3000/delete?table_id={}&order_id={}
-* Select: get all (remaining) items by table id\
-  http://127.0.0.1:3000/check/?table_id={}
-* Select: get item by order id or (table id & item id)\
-  http://127.0.0.1:3000/check/?table_id={}}&item_id={}
+  [GET] http://127.0.0.1:3000/delete?table_id={}&order_id={}
+* Select: get all items by table id (would hidden after order cooked finish)\
+  [GET] http://127.0.0.1:3000/check/?table_id={}
+* Select: get item by table id & item id (would hidden after order cooked finish)\
+  [GET] http://127.0.0.1:3000/check/?table_id={}}&item_id={}
+* Select: get all items by table id & order id (would not hidden after order cooked finish)\
+  [GET] http://127.0.0.1:3000/check/?table_id={}
 
 *Technical*
-* limit number of orders for 1 table
-* Does not have to counted down in real time
+* Add order_service to handle function logic as purely functional programming
+* Redis
 
 
 ## Build & Run Step
 
 ### Build
 
-To-do
+* go to the project root
+* run "cargo build" command.
 
 ### Run
 
-To-do
+* make sure you have redis in local (redis://127.0.0.1/)
+* go to the project root
+* run "cargo run" command.
 
