@@ -12,12 +12,15 @@ use std::sync::{Arc, Mutex, MutexGuard};
 
 use crate::action::Action;
 use crate::order::Order;
+use crate::order_service::OrderService;
 use crate::table::Table;
 use crate::thread_pool::ThreadPool;
 
-#[path = "http_server.rs"] mod thread_pool;
-#[path = "table.rs"] mod table;
-#[path = "order.rs"] mod order;
+#[path = "util/http_server.rs"] mod thread_pool;
+#[path = "dao/table.rs"] mod table;
+#[path = "dao/order.rs"] mod order;
+#[path = "repository/redis_handler.rs"] mod redis_handler;
+#[path = "service/order_service.rs"] mod order_service;
 #[path = "action.rs"] mod action;
 
 static ADDRESS: &str = "127.0.0.1:3000";
@@ -26,19 +29,16 @@ static THREAD_POOL: usize = 10;
 fn main() {
     let listener = TcpListener::bind(ADDRESS).unwrap();
     let thread_pool = ThreadPool::new(THREAD_POOL);
-    let tables = Arc::new(Table::open_tables(10));
 
     for stream in listener.incoming() {
-        let tables = tables.clone();
-
         let stream = stream.unwrap();
-        thread_pool.execute(|| handle_connection(stream, tables));
+        thread_pool.execute(|| handle_connection(stream));
     }
 
     println!("shutting down");
 }
 
-fn handle_connection(mut stream:TcpStream, tables:Arc<Vec<Mutex<Table>>>) {
+fn handle_connection(mut stream:TcpStream) {
     let status = 200;
     let status_text = "ok";
     let mut buffer = [0; 1024];
@@ -54,31 +54,26 @@ fn handle_connection(mut stream:TcpStream, tables:Arc<Vec<Mutex<Table>>>) {
     if Action::None == action {
         html = fs::read_to_string("resource/html/index.html").unwrap();
     } else if check {
-        let table_id = request.get("table_id").unwrap();
-        let table_id = table_id.parse::<usize>().unwrap();
-        if table_id < tables.len() {
-            let item_id = request.get("item_id");
-            let order_id = request.get("order_id");
+        let item_id = request.get("item_id");
+        let order_id = request.get("order_id");
+        let table_id = request.get("table_id").unwrap().to_string();
+        let table = redis_handler::fetch_table(table_id);
 
-            let table = tables[table_id].lock().unwrap();
-            match action {
-                Action::Create => {
-                    let item_id = item_id.unwrap().to_string();
-                    html = create_action(table, item_id);
-                },
-                Action::Delete => {
-                    let order_id = order_id.unwrap().to_string();
-                    html = delete_action(table, order_id);
-                },
-                Action::Query => {
-                    html = query_action(table, item_id);
-                },
-                _ => {
-                    html = fs::read_to_string("../resource/html/index.html").unwrap();
-                }
+        match action {
+            Action::Create => {
+                let item_id = item_id.unwrap().to_string();
+                html = create_action(table, item_id);
+            },
+            Action::Delete => {
+                let order_id = order_id.unwrap().to_string();
+                html = delete_action(table, order_id);
+            },
+            Action::Query => {
+                html = query_action(table, item_id);
+            },
+            _ => {
+                html = fs::read_to_string("../resource/html/index.html").unwrap();
             }
-        } else {
-            html = format!("Table number is not correct. Please enter 0 to {}", (tables.len()-1));
         }
     } else {
         html = format!("Please enter all mandatory fills.");
@@ -90,36 +85,39 @@ fn handle_connection(mut stream:TcpStream, tables:Arc<Vec<Mutex<Table>>>) {
     //println!("request:\n{}", String::from_utf8_lossy(&buffer));
 }
 
-fn delete_action(mut table:MutexGuard<Table>, order_id:String) -> String {
-    let order = Table::get_orders_by_order_id(table.clone(), order_id.clone());
+fn delete_action(mut table:Table, order_id:String) -> String {
+    let order = OrderService::get_orders_by_order_id(table.clone(), order_id.clone());
     return if order.is_some() {
-        let orders = Table::delete_order(table.clone(), order_id.clone());
+        let orders = OrderService::delete_order(table.clone(), order_id.clone());
         table.orders = orders;
-        // let mut temp = table.clone();
-        // temp.orders = orders.clone();
+        redis_handler::put_table(table);
         format!("Order delete successfully")
     } else {
         format!("Delete failure: order [{}] not found.", order_id)
     }
 }
 
-fn create_action(mut table:MutexGuard<Table>, item_id:String) -> String {
-    if !Table::is_too_much_order(table.clone()) {
-        let orders = Table::create_order(table.clone(), item_id);
+fn create_action(mut table:Table, item_id:String) -> String {
+    let item: Vec<String> = item_id.split(",")
+        .map(|s| s.to_string()).collect();
+
+    if !OrderService::is_too_much_order(table.clone(), item.len()) {
+        let orders = OrderService::create_order(table.clone(), item);
         table.orders = orders;
+        redis_handler::put_table(table);
         format!("Order created successfully.")
     } else {
         format!("This table got too much orders.")
     }
 }
 
-fn query_action(table:MutexGuard<Table>, item_id:Option<&String>) -> String {
+fn query_action(table:Table, item_id:Option<&String>) -> String {
     let orders;
     if item_id.is_some() {
-        orders = Table::get_orders_by_item(table.clone(), item_id.unwrap().to_string());
+        orders = OrderService::get_orders_by_item(table.clone(), item_id.unwrap().to_string());
     } else {
-        orders = Table::get_orders_active(table.clone());
+        orders = OrderService::get_orders_active(table.clone());
     }
-    let html = Order::to_jsons(orders);
+    let html = OrderService::to_jsons(orders);
     html
 }

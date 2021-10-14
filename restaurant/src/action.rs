@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 #[derive(PartialEq)]
-pub(crate) enum Action {
+pub enum Action {
     Create,
     Delete,
     Query,
@@ -26,7 +26,7 @@ impl Action {
         }
     }
 
-    pub(crate) fn get_url_and_parameter(buffer:[u8;1024]) -> HashMap<String, String> {
+    pub fn get_url_and_parameter(buffer:[u8;1024]) -> HashMap<String, String> {
         let url = Action::get_request_para(buffer);
         let url = url.get(0).unwrap();
         println!("url: {}", url);
@@ -69,8 +69,3 @@ impl Action {
     }
 
 }
-
-// fn compare(url:&String, target:&str) -> bool {
-//     let tmp = String::from(target);
-//     url.eq(&tmp)
-// }
