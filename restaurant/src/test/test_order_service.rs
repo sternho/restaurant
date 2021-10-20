@@ -10,6 +10,45 @@ mod test_order_service {
     static time_format:&str = "%Y/%m/%d %H:%M:%S";
 
     #[test]
+    pub fn test_filter() {
+        let order_time = datetime_util::to_date_str(&"2021/10/14 18:58:00", time_format);
+        let table_id = String::from("table_id");
+        let mut table = Table::new(table_id.clone());
+
+        let mut orders = Vec::new();
+        orders.push(Order {
+            order_id: "order_id1".to_string(),
+            table_id: "table_id".to_string(),
+            item_id: "item_id".to_string(),
+            cook_time: 1,
+            create_at: order_time
+        });
+        orders.push(Order {
+            order_id: "order_id2".to_string(),
+            table_id: "table_id".to_string(),
+            item_id: "item_id".to_string(),
+            cook_time: 2,
+            create_at: order_time
+        });
+        orders.push(Order {
+            order_id: "order_id2".to_string(),
+            table_id: "table_id".to_string(),
+            item_id: "item_id2".to_string(),
+            cook_time: 2,
+            create_at: order_time
+        });
+        table.orders = orders;
+
+        let expire_time = datetime_util::to_date_str(&"2021/10/14 18:59:00", time_format);
+        let mut filters = Vec::new();
+        filters.push(OrderService::item_id_filter(String::from("item_id")));
+        filters.push(OrderService::order_id_filter(String::from("order_id2")));
+        filters.push(OrderService::expired_filter(expire_time));
+        let updated_orders = OrderService::filter_orders(table, filters);
+        assert_eq!(1, updated_orders.len())
+    }
+
+    #[test]
     pub fn test_is_order_expired() {
         let order_time = datetime_util::to_date_str(&"2021/10/14 18:58:00", time_format);
         let order = Order {
@@ -101,97 +140,6 @@ mod test_order_service {
 
         let updated_orders = OrderService::delete_order(table, String::from("order_id1"));
         assert_eq!(1, updated_orders.len())
-    }
-
-    #[test]
-    pub fn test_get_orders_active() {
-        let order_time = datetime_util::to_date_str(&"2021/10/14 18:58:00", time_format);
-        let table_id = String::from("table_id");
-        let mut table = Table::new(table_id.clone());
-
-        let mut orders = Vec::new();
-        orders.push(Order {
-            order_id: "order_id1".to_string(),
-            table_id: "table_id".to_string(),
-            item_id: "item_id".to_string(),
-            cook_time: 1,
-            create_at: order_time
-        });
-        orders.push(Order {
-            order_id: "order_id2".to_string(),
-            table_id: "table_id".to_string(),
-            item_id: "item_id".to_string(),
-            cook_time: 2,
-            create_at: order_time
-        });
-        table.orders = orders;
-
-        let expire_time = datetime_util::to_date_str(&"2021/10/14 18:59:00", time_format);
-        let updated_orders = OrderService::get_orders_active(table, expire_time);
-        assert_eq!(1, updated_orders.len())
-    }
-
-    #[test]
-    pub fn test_get_orders_by_item() {
-        let order_time = datetime_util::to_date_str(&"2021/10/14 18:58:00", time_format);
-        let table_id = String::from("table_id");
-        let mut table = Table::new(table_id.clone());
-
-        let mut orders = Vec::new();
-        orders.push(Order {
-            order_id: "order_id1".to_string(),
-            table_id: "table_id".to_string(),
-            item_id: "item_id".to_string(),
-            cook_time: 1,
-            create_at: order_time
-        });
-        orders.push(Order {
-            order_id: "order_id2".to_string(),
-            table_id: "table_id".to_string(),
-            item_id: "item_id".to_string(),
-            cook_time: 2,
-            create_at: order_time
-        });
-        orders.push(Order {
-            order_id: "order_id2".to_string(),
-            table_id: "table_id".to_string(),
-            item_id: "item_id2".to_string(),
-            cook_time: 2,
-            create_at: order_time
-        });
-        table.orders = orders;
-
-        let expire_time = datetime_util::to_date_str(&"2021/10/14 18:59:00", time_format);
-        let updated_orders = OrderService::get_orders_by_item(table, String::from("item_id"), expire_time);
-        assert_eq!(1, updated_orders.len())
-    }
-
-    #[test]
-    pub fn test_get_orders_by_order_id() {
-        let order_time = datetime_util::to_date_str(&"2021/10/14 18:58:00", time_format);
-        let table_id = String::from("table_id");
-        let mut table = Table::new(table_id.clone());
-
-        let mut orders = Vec::new();
-        orders.push(Order {
-            order_id: "order_id1".to_string(),
-            table_id: "table_id".to_string(),
-            item_id: "item_id".to_string(),
-            cook_time: 2,
-            create_at: order_time
-        });
-        orders.push(Order {
-            order_id: "order_id2".to_string(),
-            table_id: "table_id".to_string(),
-            item_id: "item_id".to_string(),
-            cook_time: 2,
-            create_at: order_time
-        });
-        table.orders = orders;
-
-        let order_id = String::from("order_id1");
-        let order = OrderService::get_orders_by_order_id(table, order_id.clone());
-        assert_eq!(order_id.clone(), order.unwrap().order_id)
     }
 
     #[test]

@@ -28,6 +28,7 @@ impl Action {
 
     pub fn get_url_and_parameter(buffer:[u8;1024]) -> HashMap<String, String> {
         let url = Action::get_request_para(buffer);
+        println!("request: {:?}", url);
         let url = url.get(0).unwrap();
         println!("url: {}", url);
         let url = url.split(" ");
@@ -62,9 +63,7 @@ impl Action {
         let data = String::from_utf8(buffer.to_vec()).unwrap();
         let data = data.lines();
         let mut para = Vec::new();
-        for x in data {
-            para.push(x.to_string());
-        }
+        data.for_each(|x| para.push(x.to_string()));
         return para;
     }
 

@@ -2,10 +2,11 @@ use std::fs;
 use std::io::prelude::*;
 use std::net::TcpListener;
 use std::net::TcpStream;
+
 use chrono::Local;
+use rand::Rng;
 
 use crate::action::Action;
-use crate::order::Order;
 use crate::order_service::OrderService;
 use crate::table::Table;
 use crate::thread_pool::ThreadPool;
@@ -23,6 +24,8 @@ use crate::thread_pool::ThreadPool;
 static ADDRESS: &str = "127.0.0.1:3000";
 static THREAD_POOL: usize = 10;
 
+/// main function to start the program
+/// Creating threads to receive and handle HTTP request.
 fn main() {
     let listener = TcpListener::bind(ADDRESS).unwrap();
     let thread_pool = ThreadPool::new(THREAD_POOL);
@@ -35,6 +38,9 @@ fn main() {
     println!("shutting down");
 }
 
+/// This is called the threads to handle HTTP requests.
+/// when received requests, it would translate the request to Action and related input parameters.
+/// Base on the Action to call related logics.
 fn handle_connection(mut stream:TcpStream) {
     let status = 200;
     let status_text = "ok";
@@ -82,9 +88,15 @@ fn handle_connection(mut stream:TcpStream) {
     //println!("request:\n{}", String::from_utf8_lossy(&buffer));
 }
 
+/// handle the delete order request when received.
+/// received the input parameter and pass to the OrderService to handle.
+/// After get back the result, pass the result to redis_handler save.
+///
+/// sample request: http://127.0.0.1:3000/delete?order_id={order_id}&table_id={table_id}
 fn delete_action(mut table:Table, order_id:String) -> String {
-    let order = OrderService::get_orders_by_order_id(table.clone(), order_id.clone());
-    return if order.is_some() {
+    let filter = vec![OrderService::order_id_filter(order_id.clone())];
+    let order = OrderService::filter_orders(table.clone(),filter);
+    return if order.len()>0 {
         let orders = OrderService::delete_order(table.clone(), order_id.clone());
         table.orders = orders;
         redis_handler::put_table(table);
@@ -94,12 +106,18 @@ fn delete_action(mut table:Table, order_id:String) -> String {
     }
 }
 
+/// handle the create order request when received.
+/// received the input parameter and pass to the OrderService to handle.
+/// After get back the result, pass the result to redis_handler save.
+///
+/// sample request: http://127.0.0.1:3000/create?table_id={table_id}&item_id={item_id}
 fn create_action(mut table:Table, item_id:String) -> String {
     let item: Vec<String> = item_id.split(",")
         .map(|s| s.to_string()).collect();
 
     if !OrderService::is_too_much_order(table.clone(), item.len()) {
-        let orders = OrderService::create_order(table.clone(), item);
+        let cook_time = rand::thread_rng().gen_range(5..15);
+        let orders = OrderService::create_order(table.clone(), item, cook_time);
         table.orders = orders;
         redis_handler::put_table(table);
         format!("Order created successfully.")
@@ -108,15 +126,17 @@ fn create_action(mut table:Table, item_id:String) -> String {
     }
 }
 
+/// handle the query order request when received.
+/// received the input parameter and pass to the OrderService to fitler out correct orders.
+/// And return the json format text outside.
+///
+/// sample request: http://127.0.0.1:3000/check?table_id=1&item_id=5
 fn query_action(table:Table, item_id:Option<&String>) -> String {
-    let orders;
+    let mut filters = vec![OrderService::expired_filter(Local::now())];
     if item_id.is_some() {
-        orders = OrderService::get_orders_by_item(table.clone(),
-                                                  item_id.unwrap().to_string(),
-                                                  Local::now());
-    } else {
-        orders = OrderService::get_orders_active(table.clone(), Local::now());
+        filters.push(OrderService::item_id_filter(item_id.unwrap().to_string()));
     }
-    let html = OrderService::to_jsons(orders);
-    html
+    let orders = OrderService::filter_orders(table, filters);
+    let json = OrderService::to_jsons(orders);
+    json
 }
