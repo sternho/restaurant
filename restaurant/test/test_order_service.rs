@@ -43,41 +43,45 @@ mod test_order_service {
         let mut filters = Vec::new();
         filters.push(OrderService::item_id_filter(String::from("item_id")));
         filters.push(OrderService::order_id_filter(String::from("order_id2")));
-        filters.push(OrderService::expired_filter(expire_time));
+        filters.push(OrderService::not_expired_filter(expire_time));
         let updated_orders = OrderService::filter_orders(table, filters);
         assert_eq!(1, updated_orders.len())
     }
 
     #[test]
-    pub fn test_is_order_expired() {
+    pub fn test_order_not_expired() {
         let order_time = datetime_util::to_date_str(&"2021/10/14 18:58:00", time_format);
-        let order = Order {
-            order_id: "order_id".to_string(),
-            table_id: "table_id".to_string(),
-            item_id: "item_id".to_string(),
-            cook_time: 2,
-            create_at: order_time
-        };
-
-        let expire_time = datetime_util::to_date_str(&"2021/10/14 18:59:00", time_format);
-        let expired = OrderService::is_order_expired(order, expire_time);
-        assert!(expired)
-    }
-
-    #[test]
-    pub fn test_is_order_expired_false() {
-        let order_time = datetime_util::to_date_str(&"2021/10/14 18:58:00", time_format);
-        let order = Order {
+        let mut table = Table::new(String::from("table_id"));
+        table.orders.push(Order {
             order_id: "order_id".to_string(),
             table_id: "table_id".to_string(),
             item_id: "item_id".to_string(),
             cook_time: 1,
             create_at: order_time
-        };
+        });
 
         let expire_time = datetime_util::to_date_str(&"2021/10/14 18:59:00", time_format);
-        let expired = OrderService::is_order_expired(order, expire_time);
-        assert!(!expired)
+        let mut filters = vec![(OrderService::not_expired_filter(expire_time))];
+        let updated_orders = OrderService::filter_orders(table, filters);
+        assert_eq!(0, updated_orders.len())
+    }
+
+    #[test]
+    pub fn test_order_not_expired_false() {
+        let order_time = datetime_util::to_date_str(&"2021/10/14 18:58:00", time_format);
+        let mut table = Table::new(String::from("table_id"));
+        table.orders.push(Order {
+            order_id: "order_id".to_string(),
+            table_id: "table_id".to_string(),
+            item_id: "item_id".to_string(),
+            cook_time: 2,
+            create_at: order_time
+        });
+
+        let expire_time = datetime_util::to_date_str(&"2021/10/14 18:59:00", time_format);
+        let mut filters = vec![(OrderService::not_expired_filter(expire_time))];
+        let updated_orders = OrderService::filter_orders(table, filters);
+        assert_eq!(1, updated_orders.len())
     }
 
     #[test]
@@ -85,7 +89,7 @@ mod test_order_service {
         let table_id = String::from("table_id");
         let mut table = Table::new(table_id.clone());
         for i in 0..99 {
-            table.orders.push(Order::new(table_id.clone(), format!("item{}", i)));
+            table.orders.push(Order::new(table_id.clone(), format!("item{}", i), 5));
         }
         let too_much = OrderService::is_too_much_order(table, 2);
         assert!(too_much)
@@ -96,7 +100,7 @@ mod test_order_service {
         let table_id = String::from("table_id");
         let mut table = Table::new(table_id.clone());
         for i in 0..99 {
-            table.orders.push(Order::new(table_id.clone(), format!("item{}", i)));
+            table.orders.push(Order::new(table_id.clone(), format!("item{}", i), 5));
         }
         let too_much = OrderService::is_too_much_order(table, 1);
         assert!(!too_much)
@@ -111,7 +115,7 @@ mod test_order_service {
         items.push(String::from("item1"));
         items.push(String::from("item2"));
 
-        let updated_orders = OrderService::create_order(table, items);
+        let updated_orders = OrderService::create_order(table, items, 5);
         assert_eq!(2, updated_orders.len())
     }
 

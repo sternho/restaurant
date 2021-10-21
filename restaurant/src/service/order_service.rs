@@ -43,7 +43,7 @@ impl OrderService {
     /// Examples:
     /// let filter = var![OrderService::expired_filter(Local::now())];
     /// let orders = filter_orders(table, filter);
-    pub fn expired_filter(expire_time: DateTime<Local>) -> Box<dyn Fn(Order) -> bool> {
+    pub fn not_expired_filter(expire_time: DateTime<Local>) -> Box<dyn Fn(Order) -> bool> {
         Box::new(move |order| {
             let expired_time = order.create_at + Duration::minutes(order.cook_time as i64);
             return expired_time > expire_time;

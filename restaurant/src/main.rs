@@ -19,8 +19,8 @@ use crate::order_service::OrderService;
 #[path = "dao/order.rs"] mod order;
 #[path = "repository/redis_handler.rs"] mod redis_handler;
 #[path = "service/order_service.rs"] mod order_service;
-#[path = "test/test_order_service.rs"] mod test_order_service;
-#[path = "test/test_datetime_util.rs"] mod test_datetime_util;
+#[path = "../test/test_order_service.rs"] mod test_order_service;
+#[path = "../test/test_datetime_util.rs"] mod test_datetime_util;
 
 /// main function to start the program
 /// Creating threads to receive and handle HTTP request.
@@ -95,7 +95,7 @@ fn order_query(query_json: String) -> String {
     let query:OrderQueryRequest = serde_json::from_str(&query_json).unwrap();
     let table = redis_handler::fetch_table(query.table_id);
 
-    let mut filters = vec![OrderService::expired_filter(Local::now())];
+    let mut filters = vec![OrderService::not_expired_filter(Local::now())];
     if query.item_id.is_some() {
         filters.push(OrderService::item_id_filter(query.item_id.unwrap()));
     }
