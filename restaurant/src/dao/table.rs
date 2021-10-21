@@ -1,6 +1,9 @@
 use crate::order::Order;
 
+use serde::{Deserialize, Serialize};
+
 /// define table struct and relate member variable.
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Table {
     pub table_id: String,
     pub orders: Vec<Order>,

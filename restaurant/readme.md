@@ -17,15 +17,25 @@ Candidate: Ho Tsz Chun (Stern)
 
 *Functional*
 * Add: create order (and random prepare time between 5-15 minutes) by using table id & item id\
-  [GET] http://127.0.0.1:3000/create?table_id={}&item_id={},{},{}
+  [POST] http://localhost:8000/order \
+  JSON Body:
+  ```
+  {
+    "table_id": "table1",
+    "item_id": ["item1", "item2"]
+  }
+  ```
 * Delete: remove order by using order id or (table id & item id)\
-  [GET] http://127.0.0.1:3000/delete?table_id={}&order_id={}
+  [DELETE] http://localhost:8000/order?order_id={}&table_id={}
 * Select: get all items by table id (would hidden after order cooked finish)\
-  [GET] http://127.0.0.1:3000/check/?table_id={}
-* Select: get item by table id & item id (would hidden after order cooked finish)\
-  [GET] http://127.0.0.1:3000/check/?table_id={}}&item_id={}
-* Select: get all items by table id & order id (would not hidden after order cooked finish)\
-  [GET] http://127.0.0.1:3000/check/?table_id={}
+  [GET] http://localhost:8000/order \
+  JSON Body:
+  ```
+  {
+      "table_id": "table1",
+      "item_id": "item2"
+  }
+  ```
 
 *Technical*
 * Add order_service to handle function logic as purely functional programming
@@ -37,7 +47,8 @@ Candidate: Ho Tsz Chun (Stern)
 ### Build
 
 * go to the project root
-* run "cargo build" command.
+* run "rustup default nightly" command to download nightly library for web server.
+* run "cargo build" command for compile the application.
 
 ### Run
 
