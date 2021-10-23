@@ -1,12 +1,7 @@
-use crate::order::Order;
-
-use serde::{Deserialize, Serialize};
-
 /// define table struct and relate member variable.
-#[derive(Serialize, Deserialize, Debug)]
 pub struct Table {
     pub table_id: String,
-    pub orders: Vec<Order>,
+    pub orders: Vec<String>,
 }
 
 /// for clone the table object.
@@ -15,9 +10,9 @@ pub struct Table {
 /// let new_object = table.clone();
 impl Clone for Table {
     fn clone(&self) -> Table {
-        let mut new = Table::new(self.table_id.clone());
-        new.orders = self.orders.clone();
-        return new;
+        let mut new_table = Table::new(self.table_id.clone());
+        new_table.orders = self.orders.clone();
+        return new_table;
     }
 }
 
@@ -33,5 +28,4 @@ impl Table {
             orders: Vec::new(),
         };
     }
-
 }

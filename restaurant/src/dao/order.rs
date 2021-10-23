@@ -12,7 +12,8 @@ pub struct Order {
     pub order_id: String,
     pub table_id: String,
     pub item_id: String,
-    pub cook_time: usize, /// 5-15 minutes
+    /// 5-15 minutes
+    pub cook_time: usize,
     #[serde(with = "datetime_util::json_date_format")]
     pub create_at: DateTime<Local>,
 }
@@ -23,7 +24,7 @@ impl Order {
     ///
     /// Example:
     /// let order = Order::new(String::from('table1'), String::from('item1'), 5);
-    pub fn new(table_id:String, item_id:String, cook_time:usize) -> Order {
+    pub fn new(table_id: String, item_id: String, cook_time: usize) -> Order {
         let order_id = Uuid::new_v4().to_string();
         Order {
             table_id,
