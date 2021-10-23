@@ -10,3 +10,9 @@ chrono = "*"
 rand = "0.8"
 uuid = { version = "0.8", features = ["serde", "v4"] }
 redis = "0.21.2"
+rocket = "0.4.5"
+serde = { version = "1.0", features = ["derive"] }
+serde_derive = "1.0.116"
+serde_json = "1.0.58"
+env_logger = "0.5.12"
+log = "0.4.6"
